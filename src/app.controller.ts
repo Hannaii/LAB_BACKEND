@@ -1,24 +1,43 @@
-import { Body, Controller, Delete, Get, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Put, Res, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
-import { ApiBody } from '@nestjs/swagger';
-import { CreateMahasiswaDTO} from './dto/create-mahasiswa.dto'
+import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { CreateMahasiswaDTO } from './dto/create-mahasiswa.dto';
 import { RegisterUserDTO } from './dto/register-user.dto';
+import { plainToInstance } from 'class-transformer';
+import { User } from './entity/user.entity';
+import { Response } from 'express';
+import { AuthGuard } from './auth.guard';
+import { UserDecorator } from './user.decorator';
 
 
 
 @Controller()
 export class AppController {
 
- 
 
-  constructor(private readonly appService: AppService) {}
+
+  constructor(private readonly appService: AppService) { }
 
   @Post("register")
-  @ApiBody({type : RegisterUserDTO})
-  register(@Body() user : RegisterUserDTO) {
+  @ApiBody({ type: RegisterUserDTO })
+  register(@Body() user: RegisterUserDTO) {
     return this.appService.register(user)
- }
+  }
 
+  @Post("login")
+  @ApiBody({
+    type: RegisterUserDTO
+  })
+
+  async login(@Body() data: RegisterUserDTO,
+    @Res({ passthrough: true }) res: Response) {
+    const result = await this.appService.login(data)
+    res.cookie("token", result.token)
+
+    result.user = plainToInstance(User, result.user)
+
+    return result
+  }
 
   @Get()
   getHello(): string {
@@ -31,26 +50,34 @@ export class AppController {
   }
 
   @Get("mahasiswa/:nim")
-  getMahasiswaByNim(@Param("nim") nim : string) {
+  getMahasiswaByNim(@Param("nim") nim: string) {
     return this.appService.getMahasiswByNim(nim)
   }
 
   @Post("mahasiswa")
-  @ApiBody({type : CreateMahasiswaDTO})
-  createMahasiswa( @Body() data : CreateMahasiswaDTO ) {
+  @ApiBody({ type: CreateMahasiswaDTO })
+  createMahasiswa(@Body() data: CreateMahasiswaDTO) {
     return this.appService.addMahasiswa(data)
   }
 
   @Delete("mahasiswa/:nim")
-  deleteMahasiswa( @Param("nim") nim : string ) {
+  deleteMahasiswa(@Param("nim") nim: string) {
     return this.appService.menghapusMahasiswa(nim)
   }
-  
+
+  @Get("/auth")
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  auth(@UserDecorator() user : User) {
+  return user
+ }
+
+
   @Put("mahasiswa/:nim")
-  @ApiBody({type : CreateMahasiswaDTO})
-  updateMahasiswa( @Param("nim") nim : string, @Body() data : CreateMahasiswaDTO ) {
+  @ApiBody({ type: CreateMahasiswaDTO })
+  updateMahasiswa(@Param("nim") nim: string, @Body() data: CreateMahasiswaDTO) {
     return this.appService.updateMahasiswa(nim, data)
   }
- 
+
 
 }
