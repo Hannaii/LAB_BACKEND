@@ -2,16 +2,18 @@ import { Role } from "@prisma/client";
 import { Exclude, Expose } from "class-transformer";
 
 export class User {
+    @Expose()
+    id: number;
 
     @Expose()
-    id : number;
+    username: string;
+
+    @Exclude() 
+    password: string;
 
     @Expose()
-    username : string;
+    role: Role;
 
-    @Exclude()//memfilter kolom password dari backend
-    password : string;
-
-    @Expose()
-    role : Role;
+    @Expose() 
+    foto_profile?: string;
 }
